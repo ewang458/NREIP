@@ -31,4 +31,4 @@ IMPROVEMENTS?
 Currently I've explored changing the sample duration and smoothing out the padding of audio samples. In the future I would like to improve on the Adam optimizer.
 
 REPRODUCIBILITY:
-classify_data.py and any other scripts in this workspace should work by typing "python classify_data.py" in terminal. Just make sure that the packages pandas, numpy, librosa, scikit-learn, and matplotlib have been installed.  
+classify_data.py and any other scripts in this workspace should work by typing "python classify_data.py" in terminal. Just make sure that the packages pandas, numpy, librosa, scikit-learn, and matplotlib have been installed. Also, the code has hardcoded portions for pathfinding so those must be adjusted on each new machine.  

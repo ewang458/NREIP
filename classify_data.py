@@ -294,7 +294,8 @@ def plot_training_history(history):
     print("Training history saved as 'training_history.png'")
 
 if __name__ == "__main__":
-    TRAIN_CSV = 'C:/nrl_work/training.csv'
-    TEST_CSV = 'C:/nrl_work/test.csv'
-    BASE_PATH = 'C:/nrl_work/'
+    #CHANGE THESE PATHS ON EACH NEW MACHINE
+    TRAIN_CSV = '/home/elton/NREIP/training.csv'
+    TEST_CSV = '/home/elton/NREIP/test.csv'
+    BASE_PATH = '/home/elton/NREIP'
     train_model(TRAIN_CSV, TEST_CSV, BASE_PATH)
