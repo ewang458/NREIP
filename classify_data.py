@@ -98,6 +98,7 @@ class AudioDataset(Dataset):
 
 
 #CNN Model
+#TODO: change neuron activation model?
 class AudioCNN(nn.Module):
     """CNN model for audio classification"""
     def __init__(self, num_classes=7):
@@ -203,7 +204,6 @@ def test(model, dataloader, criterion, device):
 def train_model(train_csv, test_csv, base_path=''):
     device = CONFIG['device']
 
-    print("\n=== Loading Data ===")
     train_dataset = AudioDataset(train_csv, base_path)
     test_dataset = AudioDataset(test_csv, base_path)
     print(f"\nTraining samples: {len(train_dataset)} | Test samples: {len(test_dataset)}")
@@ -216,10 +216,10 @@ def train_model(train_csv, test_csv, base_path=''):
     train_loader = DataLoader(train_dataset, batch_size=CONFIG['batch_size'], shuffle=True, num_workers=2)
     test_loader = DataLoader(test_dataset, batch_size=CONFIG['batch_size'], shuffle=False, num_workers=2)
 
-    print("\n=== Building Model ===")
     model = AudioCNN(num_classes=len(CLASS_NAMES)).to(device)
     print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
 
+    #TODO: make changes to optimizer
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
 
@@ -227,7 +227,6 @@ def train_model(train_csv, test_csv, base_path=''):
     best_test_acc = 0.0
     patience, patience_counter = 15, 0
 
-    print("\n=== Training Model ===")
     for epoch in range(CONFIG['epochs']):
         print(f"\nEpoch {epoch+1}/{CONFIG['epochs']}")
         train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
@@ -255,13 +254,11 @@ def train_model(train_csv, test_csv, base_path=''):
             break
 
     model.load_state_dict(torch.load('best_model.pth'))
-
-    print("\n=== Final Evaluation ===")
+   
+    """
     test_loss, test_acc, test_preds, test_labels = test(model, test_loader, criterion, device)
     print(f"Final Test Accuracy: {test_acc:.2f}% | Loss: {test_loss:.4f}")
-    print("\nClassification Report:\n", classification_report(test_labels, test_preds, target_names=CLASS_NAMES))
-    print("Confusion Matrix:\n", confusion_matrix(test_labels, test_preds))
-
+    """
     plot_training_history(history)
     torch.save(model.state_dict(), 'audio_classifier_final.pth')
     print("\nModel saved as 'audio_classifier_final.pth'")
