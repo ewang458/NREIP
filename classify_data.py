@@ -98,7 +98,6 @@ class AudioDataset(Dataset):
 
 
 #CNN Model
-#TODO: change neuron activation model?
 class AudioCNN(nn.Module):
     """CNN model for audio classification"""
     def __init__(self, num_classes=7):
@@ -106,30 +105,30 @@ class AudioCNN(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, 32, 3, padding=1),
             nn.BatchNorm2d(32),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.Conv2d(32, 32, 3, padding=1),
             nn.BatchNorm2d(32),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.MaxPool2d(2),
             nn.Dropout(0.25)
         )
         self.conv2 = nn.Sequential(
             nn.Conv2d(32, 64, 3, padding=1),
             nn.BatchNorm2d(64),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.Conv2d(64, 64, 3, padding=1),
             nn.BatchNorm2d(64),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.MaxPool2d(2),
             nn.Dropout(0.25)
         )
         self.conv3 = nn.Sequential(
             nn.Conv2d(64, 128, 3, padding=1),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.Conv2d(128, 128, 3, padding=1),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.MaxPool2d(2),
             nn.Dropout(0.25)
         )
@@ -141,11 +140,11 @@ class AudioCNN(nn.Module):
             nn.Flatten(),
             nn.Linear(self.flatten_size, 256),
             nn.BatchNorm1d(256),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.Dropout(0.5),
             nn.Linear(256, 128),
             nn.BatchNorm1d(128),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
             nn.Dropout(0.5),
             nn.Linear(128, num_classes)
         )
@@ -219,9 +218,13 @@ def train_model(train_csv, test_csv, base_path=''):
     model = AudioCNN(num_classes=len(CLASS_NAMES)).to(device)
     print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")
 
-    #TODO: make changes to optimizer
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
+    optimizer = optim.AdamW(model.parameters(), lr=CONFIG['learning_rate'], weight_decay=0.01)
+
+    #Prevent stagnating by adjusting learning rate
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, mode='max', factor=0.5, patience=5
+    )
 
     history = {'train_loss': [], 'train_acc': [], 'test_loss': [], 'test_acc': []}
     best_test_acc = 0.0
@@ -231,6 +234,7 @@ def train_model(train_csv, test_csv, base_path=''):
         print(f"\nEpoch {epoch+1}/{CONFIG['epochs']}")
         train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
         test_loss, test_acc, _, _ = test(model, test_loader, criterion, device)
+        scheduler.step(test_acc)
 
         history['train_loss'].append(train_loss)
         history['train_acc'].append(train_acc)
