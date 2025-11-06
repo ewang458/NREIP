@@ -26,7 +26,7 @@ The main ML model created is "classify_data.py". Each audio file is taken and th
 Then the 3D tensor is flattened into a 1D array of size 55,296. This makes up the first layer of the training model, it passes each sample through the 55,296 neurons into a second layer of 256 neurons which is then passed into a third layer of 128 neurons which is finally passed into a layer of 7 neurons representing the 7 classifications of audio types. Altogether there are approximately 14.48 million parameters. Adam optimizer was used with a learning rate of 0.001. A patience tolerance of 15 iterations was put in place so the training could end early if no new peak accuracy in running the model on test data occurred. the best model would be saved in "best_model.pth" and a graph of accuracy and loss for training and test data would be outputted as well.
 
 RESULTS:
-After many experiments I found that within the 30-40 epochs it took to reach an end, the CNN model consistently converged to around 97-98% training accuracy. The maximum test accuracy consistently hovered between 86-88% and would occur between the 10-20 consistently. I assume that after the testing accuracy peaks, overfitting begins to occur and that explains why the test accuracy would begin to dip throughout the following epochs even as training accuracy continues to rise.
+After many experiments I found that within the 30-40 epochs it took to reach an end, the CNN model consistently converged to around 98 -99% training accuracy. The maximum test accuracy consistently hovered between 88-90%. I assume that after the testing accuracy peaks, overfitting begins to occur and that explains why the test accuracy would begin to dip throughout the following epochs even as training accuracy continues to rise.
 
 IMPROVEMENTS?
 Currently I've explored changing the sample duration and smoothing out the padding of audio samples. In the future I would like to improve on the Adam optimizer.
@@ -38,9 +38,23 @@ NREIP Fall 2025 Project
 Make sure to change the paths in the files after copying the code.
 
 TODO:
-- work on the gnu python block in the GNU_work folder
-- ask about the purpose of the gnu block system
+- work on the gnu python block in the GNU_work folder (PRIORITY)
+- if i have time find a way to 'randomize' the training and testing datasets?
+
 
 GNU Radio system:
 continous real-time signal-> get 7 second 16kHz sample -> run through model -> final classification
 Run the sample parsing in 1 second increments for overlap in sounds, any chains of the same classification means that class of audio occurred for that duration
+
+BIG ISSUES:
+- latency budget
+- multi window inference
+- single label or multi on each sample?
+- thresholds per class for identification?
+- train dist log mel may differ from irl audio
+- shorter sounds may be diluted in a 7second clip
+- buffering, back-pressure. Need a buffer ring, preallocate tensors?
+- resampling to ensure 16kHz?
+- switch from librosa to torchaudio for GNU radio?
+- use tensorRT?
+- add hysteresis params

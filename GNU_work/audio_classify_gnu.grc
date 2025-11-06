@@ -1,0 +1,421 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: python_blk_test
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Audio_Classification_GNU
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '16000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+- name: variable_qtgui_label_0
+  id: variable_qtgui_label
+  parameters:
+    comment: ''
+    formatter: None
+    gui_hint: ''
+    label: ''
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [728, 424.0]
+    rotation: 0
+    state: enabled
+- name: audio_source_0
+  id: audio_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    device_name: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_outputs: '1'
+    ok_to_block: 'True'
+    samp_rate: samp_rate
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 208.0]
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [728, 40.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      import pandas as pd\nimport librosa\nimport torch\nimport torch.nn as nn\nimport\
+      \ torch.optim as optim\nfrom torch.utils.data import Dataset, DataLoader\nfrom\
+      \ sklearn.utils.class_weight import compute_class_weight\nfrom sklearn.metrics\
+      \ import classification_report, confusion_matrix\nimport matplotlib.pyplot as\
+      \ plt\nimport os\nfrom gnuradio import gr\n\n# CNN Model (must match your training\
+      \ architecture exactly)\nclass AudioCNN(nn.Module):\n    \"\"\"CNN model for\
+      \ audio classification\"\"\"\n    def __init__(self, num_classes=7):\n     \
+      \   super(AudioCNN, self).__init__()\n        self.conv1 = nn.Sequential(\n\
+      \            nn.Conv2d(1, 32, 3, padding=1),\n            nn.BatchNorm2d(32),\n\
+      \            nn.LeakyReLU(0.1),\n            nn.Conv2d(32, 32, 3, padding=1),\n\
+      \            nn.BatchNorm2d(32),\n            nn.LeakyReLU(0.1),\n         \
+      \   nn.MaxPool2d(2),\n            nn.Dropout(0.25)\n        )\n        self.conv2\
+      \ = nn.Sequential(\n            nn.Conv2d(32, 64, 3, padding=1),\n         \
+      \   nn.BatchNorm2d(64),\n            nn.LeakyReLU(0.1),\n            nn.Conv2d(64,\
+      \ 64, 3, padding=1),\n            nn.BatchNorm2d(64),\n            nn.LeakyReLU(0.1),\n\
+      \            nn.MaxPool2d(2),\n            nn.Dropout(0.25)\n        )\n   \
+      \     self.conv3 = nn.Sequential(\n            nn.Conv2d(64, 128, 3, padding=1),\n\
+      \            nn.BatchNorm2d(128),\n            nn.LeakyReLU(0.1),\n        \
+      \    nn.Conv2d(128, 128, 3, padding=1),\n            nn.BatchNorm2d(128),\n\
+      \            nn.LeakyReLU(0.1),\n            nn.MaxPool2d(2),\n            nn.Dropout(0.25)\n\
+      \        )\n\n        self.flatten_size = 128 * 16 * 27\n\n        self.fc =\
+      \ nn.Sequential(\n            nn.Flatten(),\n            nn.Linear(self.flatten_size,\
+      \ 256),\n            nn.BatchNorm1d(256),\n            nn.LeakyReLU(0.1),\n\
+      \            nn.Dropout(0.5),\n            nn.Linear(256, 128),\n          \
+      \  nn.BatchNorm1d(128),\n            nn.LeakyReLU(0.1),\n            nn.Dropout(0.5),\n\
+      \            nn.Linear(128, num_classes)\n        )\n\n    def forward(self,\
+      \ x):\n        x = self.conv1(x)\n        x = self.conv2(x)\n        x = self.conv3(x)\n\
+      \        x = self.fc(x)\n        return x\n\n\nclass audio_classifier(gr.sync_block):\n\
+      \    \"\"\"\n    Real-time audio classifier for GNU Radio\n    \n    Processes\
+      \ 7-second audio windows with 1-second stride\n    Outputs classification results\
+      \ in real-time with message port for class names\n    \"\"\"\n    \n    CLASS_NAMES\
+      \ = [\n        'Communication',\n        'Gunshot',\n        'Footsteps',\n\
+      \        'Shelling',\n        'Vehicle',\n        'Helicopter',\n        'Fighter\
+      \ Jet'\n    ]\n    \n    def __init__(self, model_path='best_model.pth', sample_rate=16000,\
+      \ \n                 confidence_threshold=0.5, min_consecutive=2):\n       \
+      \ \"\"\"\n        Initialize the audio classifier block\n        \n        Args:\n\
+      \            model_path: Path to trained .pth model file\n            sample_rate:\
+      \ Audio sample rate (must match training - 16kHz)\n            confidence_threshold:\
+      \ Minimum confidence for valid detection (0-1)\n            min_consecutive:\
+      \ Minimum consecutive detections before reporting\n        \"\"\"\n        gr.sync_block.__init__(\n\
+      \            self,\n            name=\"audio_classifier\",\n            in_sig=[np.float32],\n\
+      \            out_sig=[np.int32, np.float32]  # class_id, confidence\n      \
+      \  )\n        \n        # Register message port for outputting class names\n\
+      \        self.message_port_register_out(pmt.intern('class_name'))\n        \n\
+      \        self.sample_rate = sample_rate\n        self.duration = 7  # seconds\n\
+      \        self.window_size = self.sample_rate * self.duration  # 112000 samples\n\
+      \        self.stride = self.sample_rate  # 1 second stride = 16000 samples\n\
+      \        self.confidence_threshold = confidence_threshold\n        self.min_consecutive\
+      \ = min_consecutive\n        \n        # Set up GNU Radio parameters for sliding\
+      \ window\n        self.set_history(self.window_size)\n        self.set_decimation(self.stride)\n\
+      \        \n        # Load model\n        print(f\"Loading model from {model_path}...\"\
+      )\n        self.device = torch.device('cuda' if torch.cuda.is_available() else\
+      \ 'cpu')\n        print(f\"Using device: {self.device}\")\n        \n      \
+      \  self.model = AudioCNN(num_classes=len(self.CLASS_NAMES))\n        self.model.load_state_dict(torch.load(model_path,\
+      \ map_location=self.device))\n        self.model.eval()\n        self.model.to(self.device)\n\
+      \        print(\"Model loaded successfully!\")\n        \n        # Mel-spectrogram\
+      \ parameters (must match training)\n        self.n_mels = 128\n        self.fmax\
+      \ = 8000\n        self.hop_length = 512\n        self.n_fft = 2048\n       \
+      \ \n        # State tracking for consecutive detections\n        self.last_class\
+      \ = -1\n        self.consecutive_count = 0\n        self.current_event_class\
+      \ = -1\n        \n    def extract_mel_spectrogram(self, audio):\n        \"\"\
+      \"\n        Extract normalized mel-spectrogram from audio array\n        \n\
+      \        Args:\n            audio: numpy array of audio samples\n          \
+      \  \n        Returns:\n            Normalized mel-spectrogram\n        \"\"\"\
+      \n        try:\n            # Ensure correct length\n            if len(audio)\
+      \ < self.window_size:\n                audio = np.pad(audio, (0, self.window_size\
+      \ - len(audio)))\n            elif len(audio) > self.window_size:\n        \
+      \        audio = audio[-self.window_size:]\n            \n            # Extract\
+      \ mel-spectrogram\n            mel_spec = librosa.feature.melspectrogram(\n\
+      \                y=audio,\n                sr=self.sample_rate,\n          \
+      \      n_mels=self.n_mels,\n                fmax=self.fmax,\n              \
+      \  hop_length=self.hop_length,\n                n_fft=self.n_fft\n         \
+      \   )\n            \n            # Convert to dB and normalize\n           \
+      \ mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)\n            mel_spec_norm\
+      \ = (mel_spec_db - mel_spec_db.min()) / (mel_spec_db.max() - mel_spec_db.min()\
+      \ + 1e-8)\n            \n            return mel_spec_norm\n            \n  \
+      \      except Exception as e:\n            print(f\"Error extracting mel-spectrogram:\
+      \ {e}\")\n            return None\n    \n    def work(self, input_items, output_items):\n\
+      \        \"\"\"\n        Process audio and generate classifications\n      \
+      \  \n        Args:\n            input_items: Input audio stream\n          \
+      \  output_items: Output classification and confidence\n            \n      \
+      \  Returns:\n            Number of items produced\n        \"\"\"\n        in0\
+      \ = input_items[0]\n        out_class = output_items[0]\n        out_conf =\
+      \ output_items[1]\n        \n        # Get the last 7 seconds of audio (sliding\
+      \ window)\n        audio_window = in0[-self.window_size:]\n        \n      \
+      \  # Extract mel-spectrogram\n        mel_spec = self.extract_mel_spectrogram(audio_window)\n\
+      \        \n        if mel_spec is None:\n            out_class[:] = -1  # Error\
+      \ indicator\n            out_conf[:] = 0.0\n            self.send_class_message(\"\
+      ERROR\", 0.0)\n            return len(output_items[0])\n        \n        #\
+      \ Run inference\n        try:\n            with torch.no_grad():\n         \
+      \       # Prepare input tensor: [batch, channels, height, width]\n         \
+      \       mel_tensor = torch.FloatTensor(mel_spec).unsqueeze(0).unsqueeze(0)\n\
+      \                mel_tensor = mel_tensor.to(self.device)\n                \n\
+      \                # Get model output\n                output = self.model(mel_tensor)\n\
+      \                \n                # Apply softmax to get probabilities\n  \
+      \              probabilities = torch.softmax(output, dim=1)\n              \
+      \  confidence, predicted_class = probabilities.max(dim=1)\n                \n\
+      \                predicted_class = predicted_class.item()\n                confidence\
+      \ = confidence.item()\n                \n                # Apply confidence\
+      \ threshold\n                if confidence < self.confidence_threshold:\n  \
+      \                  predicted_class = -1  # Below threshold\n               \
+      \     confidence = 0.0\n                \n                # Track consecutive\
+      \ detections\n                if predicted_class == self.last_class and predicted_class\
+      \ != -1:\n                    self.consecutive_count += 1\n                else:\n\
+      \                    self.consecutive_count = 1\n                    self.last_class\
+      \ = predicted_class\n                \n                # Only report after minimum\
+      \ consecutive detections\n                if self.consecutive_count >= self.min_consecutive:\n\
+      \                    if self.current_event_class != predicted_class:\n     \
+      \                   self.current_event_class = predicted_class\n           \
+      \             if predicted_class != -1:\n                            class_name\
+      \ = self.CLASS_NAMES[predicted_class]\n                            print(f\"\
+      DETECTION: {class_name} (confidence: {confidence:.2f})\")\n                \
+      \            self.send_class_message(class_name, confidence)\n             \
+      \           else:\n                            self.send_class_message(\"NO\
+      \ DETECTION\", confidence)\n                    \n                    out_class[:]\
+      \ = predicted_class\n                    out_conf[:] = confidence\n        \
+      \        else:\n                    out_class[:] = -1  # Not enough consecutive\
+      \ detections yet\n                    out_conf[:] = confidence\n           \
+      \     \n        except Exception as e:\n            print(f\"Error during inference:\
+      \ {e}\")\n            out_class[:] = -1\n            out_conf[:] = 0.0\n   \
+      \         self.send_class_message(\"ERROR\", 0.0)\n        \n        return\
+      \ len(output_items[0])\n    \n    def send_class_message(self, class_name, confidence):\n\
+      \        \"\"\"\n        Send class name as a PMT message\n        \n      \
+      \  Args:\n            class_name: String name of the detected class\n      \
+      \      confidence: Confidence score for the detection\n        \"\"\"\n    \
+      \    # Create a PMT dictionary with class name and confidence\n        msg_dict\
+      \ = pmt.make_dict()\n        msg_dict = pmt.dict_add(msg_dict, pmt.intern(\"\
+      class\"), pmt.intern(class_name))\n        msg_dict = pmt.dict_add(msg_dict,\
+      \ pmt.intern(\"confidence\"), pmt.from_double(confidence))\n        \n     \
+      \   # Send the message\n        self.message_port_pub(pmt.intern('class_name'),\
+      \ msg_dict)"
+    affinity: ''
+    alias: classify_data_block
+    comment: ''
+    example_param: '1.0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('Embedded Python Block', 'blk', [('example_param', '1.0')], [('0',
+      'complex', 1)], [('0', 'complex', 1)], 'Embedded Python Block example - a simple
+      multiply const', ['example_param'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [392, 208.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_number_sink_0
+  id: qtgui_number_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    avg: '0'
+    color1: ("black", "black")
+    color10: ("black", "black")
+    color2: ("black", "black")
+    color3: ("black", "black")
+    color4: ("black", "black")
+    color5: ("black", "black")
+    color6: ("black", "black")
+    color7: ("black", "black")
+    color8: ("black", "black")
+    color9: ("black", "black")
+    comment: ''
+    factor1: '1'
+    factor10: '1'
+    factor2: '1'
+    factor3: '1'
+    factor4: '1'
+    factor5: '1'
+    factor6: '1'
+    factor7: '1'
+    factor8: '1'
+    factor9: '1'
+    graph_type: qtgui.NUM_GRAPH_HORIZ
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    max: '1'
+    min: '-1'
+    name: '""'
+    nconnections: '1'
+    type: float
+    unit1: ''
+    unit10: ''
+    unit2: ''
+    unit3: ''
+    unit4: ''
+    unit5: ''
+    unit6: ''
+    unit7: ''
+    unit8: ''
+    unit9: ''
+    update_time: '0.10'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [728, 296.0]
+    rotation: 0
+    state: enabled
+- name: qtgui_time_sink_x_0
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: ''
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: Signal 1
+    label10: Signal 10
+    label2: Signal 2
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '""'
+    nconnections: '1'
+    size: '1024'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: complex
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Amplitude
+    ymax: '1'
+    ymin: '-1'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [720, 200.0]
+    rotation: 0
+    state: enabled
+
+connections:
+- [audio_source_0, '0', epy_block_0, '0']
+- [epy_block_0, '0', blocks_message_debug_0, print]
+- [epy_block_0, '0', qtgui_number_sink_0, '0']
+- [epy_block_0, '0', qtgui_time_sink_x_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2
