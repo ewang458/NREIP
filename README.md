@@ -1,6 +1,26 @@
 # NREIP
 *Fall 2025 NREIP Internship Project under the guidance of Dr. Aaron Cohen.
 
+INSTALLATION:
+1. git clone https://github.com/ewang458/NREIP.git
+2. Create a python environment and install pandas, torch, numpy, librosa, scikit-learn, and matplotlib
+
+GET STARTED:
+
+Running ML Model:
+1. Activate Python environment
+2. change paths in classify_data.py to your pathways
+3. python3 classify_data.py
+
+Running the GNU Radio System:
+1. Activate Python environment
+2. gnuradio-companion
+
+TODO:
+- Create filter for noise
+- Train model with shorter audio segments
+- make multiple datasets to check for overfitting?
+
 OBJECTIVE:
 This is the code used to create a machine learning script in PyTorch to identify audio snips into their respective classes. Model works with CPU and CUDA if available.
 
@@ -28,33 +48,8 @@ Then the 3D tensor is flattened into a 1D array of size 55,296. This makes up th
 RESULTS:
 After many experiments I found that within the 30-40 epochs it took to reach an end, the CNN model consistently converged to around 98 -99% training accuracy. The maximum test accuracy consistently hovered between 88-90%. I assume that after the testing accuracy peaks, overfitting begins to occur and that explains why the test accuracy would begin to dip throughout the following epochs even as training accuracy continues to rise.
 
-IMPROVEMENTS?
-Currently I've explored changing the sample duration and smoothing out the padding of audio samples. In the future I would like to improve on the Adam optimizer.
-
 REPRODUCIBILITY:
 classify_data.py and any other scripts in this workspace should work by typing "python classify_data.py" in terminal. Just make sure that the packages pandas, numpy, librosa, scikit-learn, and matplotlib have been installed. Also, the code has hardcoded portions for pathfinding so those must be adjusted on each new machine.  
 NREIP Fall 2025 Project
 
 Make sure to change the paths in the files after copying the code.
-
-TODO:
-- work on the gnu python block in the GNU_work folder (PRIORITY)
-- if i have time find a way to 'randomize' the training and testing datasets?
-
-
-GNU Radio system:
-continous real-time signal-> get 7 second 16kHz sample -> run through model -> final classification
-Run the sample parsing in 1 second increments for overlap in sounds, any chains of the same classification means that class of audio occurred for that duration
-
-BIG ISSUES:
-- latency budget
-- multi window inference
-- single label or multi on each sample?
-- thresholds per class for identification?
-- train dist log mel may differ from irl audio
-- shorter sounds may be diluted in a 7second clip
-- buffering, back-pressure. Need a buffer ring, preallocate tensors?
-- resampling to ensure 16kHz?
-- switch from librosa to torchaudio for GNU radio?
-- use tensorRT?
-- add hysteresis params
