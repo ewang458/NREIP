@@ -8,7 +8,7 @@ INSTALLATION:
 GET STARTED:
 
 Running ML Model:
-1. Activate Python environment
+1. Activate Python environment (for me this is acheived by running "python3 -m venv pytorch_env/" and then "source pytorch_env/bin/activate")
 2. change paths in classify_data.py to your pathways
 3. python3 classify_data.py
 
