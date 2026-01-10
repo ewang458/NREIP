@@ -6,7 +6,6 @@ INSTALLATION:
 2. Create a python environment and install pandas, torch, numpy, librosa, scikit-learn, and matplotlib
 
 GET STARTED:
-
 Running ML Model:
 1. Activate Python environment (for me this is acheived by running "python3 -m venv pytorch_env/" and then "source pytorch_env/bin/activate")
 2. change paths in classify_data.py to your pathways
@@ -16,10 +15,7 @@ Running the GNU Radio System:
 1. Activate Python environment
 2. gnuradio-companion
 
-TODO:
-- Create filter for noise
-- Train model with shorter audio segments
-- make multiple datasets to check for overfitting?
+TROUBLESHOOTING: There are a lot of lines where a path is hardcoded, missing one of these lines will cause an error.
 
 OBJECTIVE:
 This is the code used to create a machine learning script in PyTorch to identify audio snips into their respective classes. Model works with CPU and CUDA if available.
@@ -44,6 +40,5 @@ After many experiments I found that within the 30-40 epochs it took to reach an 
 
 REPRODUCIBILITY:
 classify_data.py and any other scripts in this workspace should work by typing "python classify_data.py" in terminal. Just make sure that the packages pandas, numpy, librosa, scikit-learn, and matplotlib have been installed. Also, the code has hardcoded portions for pathfinding so those must be adjusted on each new machine.  
-NREIP Fall 2025 Project
 
 Make sure to change the paths in the files after copying the code.
