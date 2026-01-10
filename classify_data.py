@@ -13,7 +13,7 @@ import os
 #config
 CONFIG = {
     'sample_rate': 16000,
-    'duration': 7,
+    'duration': 4,
     'n_mels': 128,
     'fmax': 8000,
     'batch_size': 32,
@@ -33,7 +33,7 @@ CLASS_NAMES = [
 ]
 
 #Log-Mel Spectrogram extraction
-def extract_mel_spectrogram(file_path, sr=16000, duration=7, n_mels=128, fmax=8000):
+def extract_mel_spectrogram(file_path, sr=16000, duration=4, n_mels=128, fmax=8000):
     """Extract mel-spectrogram from audio file"""
     try:
         audio, _ = librosa.load(file_path, sr=sr, duration=duration)
@@ -134,7 +134,7 @@ class AudioCNN(nn.Module):
         )
 
         # Flattened size approximation
-        self.flatten_size = 128 * 16 * 27
+        self.flatten_size = 128 * 16 * 15
 
         self.fc = nn.Sequential(
             nn.Flatten(),
@@ -228,7 +228,8 @@ def train_model(train_csv, test_csv, base_path=''):
 
     history = {'train_loss': [], 'train_acc': [], 'test_loss': [], 'test_acc': []}
     best_test_acc = 0.0
-    patience, patience_counter = 15, 0
+    patience = 15
+    patience_counter = 0
 
     for epoch in range(CONFIG['epochs']):
         print(f"\nEpoch {epoch+1}/{CONFIG['epochs']}")

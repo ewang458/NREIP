@@ -11,8 +11,9 @@
 from PyQt5 import Qt
 from gnuradio import qtgui
 from gnuradio import audio
-from gnuradio import gr
+from gnuradio import filter
 from gnuradio.filter import firdes
+from gnuradio import gr
 from gnuradio.fft import window
 import sys
 import signal
@@ -147,6 +148,15 @@ class audio_classification(gr.top_block, Qt.QWidget):
         self.qtgui_number_sink_0.enable_autoscale(False)
         self._qtgui_number_sink_0_win = sip.wrapinstance(self.qtgui_number_sink_0.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_number_sink_0_win)
+        self.high_pass_filter_0 = filter.fir_filter_fff(
+            1,
+            firdes.high_pass(
+                1,
+                samp_rate,
+                80,
+                20,
+                window.WIN_HAMMING,
+                6.76))
         self.epy_block_0 = epy_block_0.blk()
         self.audio_source_0 = audio.source(samp_rate, '', True)
 
@@ -154,9 +164,10 @@ class audio_classification(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.audio_source_0, 0), (self.epy_block_0, 0))
+        self.connect((self.audio_source_0, 0), (self.high_pass_filter_0, 0))
         self.connect((self.epy_block_0, 1), (self.qtgui_number_sink_0, 0))
         self.connect((self.epy_block_0, 0), (self.qtgui_time_sink_x_0, 0))
+        self.connect((self.high_pass_filter_0, 0), (self.epy_block_0, 0))
 
 
     def closeEvent(self, event):
@@ -172,6 +183,7 @@ class audio_classification(gr.top_block, Qt.QWidget):
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
+        self.high_pass_filter_0.set_taps(firdes.high_pass(1, self.samp_rate, 80, 20, window.WIN_HAMMING, 6.76))
         self.qtgui_time_sink_x_0.set_samp_rate(self.samp_rate)
 
 
