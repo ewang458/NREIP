@@ -42,3 +42,13 @@ REPRODUCIBILITY:
 classify_data.py and any other scripts in this workspace should work by typing "python classify_data.py" in terminal. Just make sure that the packages pandas, numpy, librosa, scikit-learn, and matplotlib have been installed. Also, the code has hardcoded portions for pathfinding so those must be adjusted on each new machine.  
 
 Make sure to change the paths in the files after copying the code.
+
+
+TODO List of Updates:
+- change size of original training data from 7k to 6k
+- data augmentation to increase training size from 6k ish to 10k samples
+- create a validation dataset of 1k original samples
+- use YAMNet for transfer learning to learn high level features before custom CNN extracts deeper semantics
+- evaluate whether or not the learning rate updater is necessary/helpful on training data
+- reevaluate activation function choice/hyperparameter choices
+
